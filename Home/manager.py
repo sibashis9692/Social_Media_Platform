@@ -2,7 +2,7 @@ from django.contrib.auth.models import BaseUserManager
 
 class userManager(BaseUserManager):
 
-    def create_user(self, username, email, password, *extra_fields):
+    def create_user(self, username, email, password, **extra_fields):
         if(email is None):
             return ValueError({"Error" : "Email can not be Null"})
         
