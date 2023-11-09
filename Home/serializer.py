@@ -137,7 +137,7 @@ class usercommentsSerializer(serializers.ModelSerializer):
     def get_user_name(self, obj):
         return obj.user.username  
       
-    def get_user_name(self, obj):
+    def get_post_caption(self, obj):
         return obj.post.caption    
     
 

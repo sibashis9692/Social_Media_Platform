@@ -22,12 +22,12 @@ def get_tokens_for_user(user):
         'access': str(refresh.access_token),
     }
 
-# This is an register view class
+# This is a registration view class
 class userRegisterViews(CreateAPIView):
         queryset = User.objects.all()
         serializer_class = userregisterSerializer
 
-# This is an login view class
+# This is a Login view class
 class userLoginViews(CreateAPIView):
     serializer_class = userloginSerializer
 
@@ -47,7 +47,7 @@ class userLoginViews(CreateAPIView):
         except Exception as e:
             return Response({"Error" : e})
         
-# by this class current user can show all the posts and insert new one
+# Using this class, the current user can view all of their posts and create new ones.
 class userPost(ListAPIView, CreateAPIView, DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -61,25 +61,29 @@ class userPost(ListAPIView, CreateAPIView, DestroyAPIView):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+# Using this, the current user can delete their post.
 class deletePost(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, pk):
         try:
             post = Posts.objects.filter(id = pk).first()
+
             if(post):
                 if(post.user.username == request.user.username):
                     path = os.path.join(BASE_DIR, 'images', str(post.images))
 
-                    os.remove(path)
+                    if(os.path.exists(path)):
+                        os.remove(path)
+
                     post.delete()
                     return Response({"Message" : "Successfully Delete"}, HTTP_200_OK)
                 return Response({"Message" : "You are not an authorized person to delete the post."}, HTTP_401_UNAUTHORIZED)
             return Response({"Message" : f"No posts are available with the ID {pk}"}, HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({"Error" : e})
+            return Response({"Error" : str(e)})
         
-# by this class current user can show all his comments
+# Using this class, the current user can view all their comments on different posts.
 class userCommentsViews(ListAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -93,14 +97,14 @@ class userCommentsViews(ListAPIView):
         except Exception as e:
             return Response({"Error" : e})
         
-# by this class current user can see all the post from the differnet user
+# This class functions as a home page where the current user can view posts from various users.
 class allPosts(ListAPIView):
     permission_classes = [IsAuthenticated]
 
     queryset = Posts.objects.all()
     serializer_class = userpostSerializer
 
-
+# Using this class, the current user can like and dislike specific posts.
 class likesViewer(ListAPIView, CreateAPIView, UpdateAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -134,7 +138,7 @@ class likesViewer(ListAPIView, CreateAPIView, UpdateAPIView):
                 like_exists = Likes.objects.filter(user = request.user, post = post).first()
 
                 if(like_exists):
-                    return Response({"Arelr" : f"You have already {'Like' if like_exists.like else 'DisLike'} the post"}, HTTP_400_BAD_REQUEST)
+                    return Response({"Error" : f"You have already {'Like' if like_exists.like else 'DisLike'} the post"}, HTTP_400_BAD_REQUEST)
                 
                 serializer = likesSerializer(data = data, context={'user' : request.user, 'post' : post})
                 if(serializer.is_valid(raise_exception=True)):
@@ -170,7 +174,7 @@ class likesViewer(ListAPIView, CreateAPIView, UpdateAPIView):
         except Exception as e:
             return Response({"Error" : e})
         
-# this help to do comment on the post by current user
+# Using this class, the current user can leave a comment and also delete the comment on a specific post.
 class single_commentViewer(ListAPIView, CreateAPIView, UpdateAPIView, DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -228,7 +232,7 @@ class single_commentViewer(ListAPIView, CreateAPIView, UpdateAPIView, DestroyAPI
         except Exception as e:
             return Response({"Error" : e})
 
-# this helps to show all comments of the posts
+# This helps to display all comments of a single post.
 class commentsViewer(ListAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -237,7 +241,7 @@ class commentsViewer(ListAPIView):
 
 
 
-# This helps to follwing users
+# This helps to follow users.
 class userconnectionViewer(ListAPIView, CreateAPIView):
     queryset = Connection.objects.all()
     serializer_class = conectionSerilaizer
