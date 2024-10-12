@@ -8,7 +8,7 @@ from .serializer import *
 from rest_framework.views import APIView
 from django.contrib.auth.hashers import check_password
 from rest_framework.status import *
-
+from django.shortcuts import redirect
 from pathlib import Path
 import os
 
@@ -22,10 +22,12 @@ def get_tokens_for_user(user):
         'access': str(refresh.access_token),
     }
 
+
 # This is a registration view class
 class userRegisterViews(CreateAPIView):
         queryset = User.objects.all()
         serializer_class = userregisterSerializer
+
 
 # This is a Login view class
 class userLoginViews(CreateAPIView):
@@ -40,14 +42,15 @@ class userLoginViews(CreateAPIView):
                 if(user is not None):
                     print(check_password(serializer.data.get("password"), user.password))
                     if(user.username != serializer.data.get("username") or not check_password(serializer.data.get("password"), user.password)):
-                        return Response({"Message" : "credential is not correct"}, HTTP_400_BAD_REQUEST)
+                        return Response({"Message" : "Credential not correct"}, HTTP_400_BAD_REQUEST)
                     token = get_tokens_for_user(user)
-                    return Response({"Message" : "successful", "Token" : token}, HTTP_200_OK)
-                return Response({"Message" : "The user is not found."}, HTTP_404_NOT_FOUND)
+                    return Response({"Message" : "Successful", "Token" : token}, HTTP_200_OK)
+                return Response({"Message" : "User not Found."}, HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"Error" : e})
         
-# Using this class, the current user can view all of their posts and create new ones.
+
+# Here current user can view all of their posts and create new ones.
 class userPost(ListAPIView, CreateAPIView, DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -60,6 +63,8 @@ class userPost(ListAPIView, CreateAPIView, DestroyAPIView):
     
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+    
+
 
 # Using this, the current user can delete their post.
 class deletePost(APIView):
@@ -83,6 +88,8 @@ class deletePost(APIView):
         except Exception as e:
             return Response({"Error" : str(e)})
         
+
+
 # Using this class, the current user can view all their comments on different posts.
 class userCommentsViews(ListAPIView):
     permission_classes = [IsAuthenticated]
@@ -97,12 +104,16 @@ class userCommentsViews(ListAPIView):
         except Exception as e:
             return Response({"Error" : e})
         
+
+
 # This class functions as a home page where the current user can view posts from various users.
 class allPosts(ListAPIView):
     permission_classes = [IsAuthenticated]
 
     queryset = Posts.objects.all()
     serializer_class = userpostSerializer
+
+    
 
 # Using this class, the current user can like and dislike specific posts.
 class likesViewer(ListAPIView, CreateAPIView, UpdateAPIView):
@@ -256,13 +267,98 @@ class userconnectionViewer(ListAPIView, CreateAPIView):
             return Response({"Error" : e})
         
     def post(self, request, username):
+        # try:
+        #     serializer = conectionSerilaizer(data = request.data, context = {'post' : username, 'current_user' : request.user})
+        #     if(serializer.is_valid()):
+        #         print(serializer.validated_data)
+        #         serializer.save()
+        #         return Response({"Message": serializer.data}, HTTP_200_OK)
+        #     else:
+        #         return Response({"Message" : serializer.errors}, HTTP_404_NOT_FOUND)
+        # except Exception as e:
+        #     return Response({"Error" : e})
+
+
+
+
         try:
-            serializer = conectionSerilaizer(data = request.data, context = {'post' : username, 'current_user' : request.user})
-            if(serializer.is_valid(raise_exception=True)):
-                print(serializer.validated_data)
+            serializer = conectionSerilaizer(data = request.data, context = {'post' : username, 'current_user': request.user})
+            if(serializer.is_valid()):
                 serializer.save()
-                return Response({"Message": serializer.data}, HTTP_200_OK)
                 
-            return Response({"Message" : "The post does not exist"}, HTTP_404_NOT_FOUND)
+                print(f" Hello Ji How are You and How you man {serializer.validated_data}")
+                return Response({"Message": serializer.validated_data}, HTTP_200_OK)
+            else:
+                return Response({"Message" : serializer.errors}, HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"Error" : e})
+        
+
+class sending_friend_request(ListAPIView):
+
+    permission_classes = [IsAuthenticated]
+
+    queryset = panding_requests.objects.all()
+    serializer_class = sending_friend_request_Serializer
+
+    def get_queryset(self):
+        user = self.request.user
+
+        data = panding_requests.objects.filter(From = user.id).all()
+
+
+        return data
+    
+class resive_friend_request(ListAPIView):
+
+    permission_classes = [IsAuthenticated]
+
+    queryset = panding_requests.objects.all()
+    serializer_class = resive_friend_request_Serializer
+
+    def get_queryset(self):
+        user = self.request.user
+
+        print(user.id)
+
+        data = panding_requests.objects.filter(to = user).all()
+
+        return data
+
+class accept_friend_request(CreateAPIView):
+    queryset = Connection.objects.all()
+    serializer_class = accept_resive_friend_Serializer
+
+    def post(self, request, username):
+        try:
+            serializer = accept_resive_friend_Serializer(data = request.data, context = {'post' : username, 'current_user': request.user})
+            if(serializer.is_valid()):
+                
+                serializer.save()
+                
+                print(f" Hello Ji How are You and How you man {serializer.validated_data}")
+                return Response({"Message": serializer.validated_data}, HTTP_200_OK)
+            else:
+                return Response({"Message" : serializer.errors}, HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"Error" : e})
+
+
+
+class profileView(ListAPIView):
+
+    permission_classes = [IsAuthenticated]
+
+    queryset = User.objects.all()
+    serializer_class = profileSerializer
+
+
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+        data = User.objects.filter(id=user.id).first()
+
+        if data:
+            serializer = self.serializer_class(data, context = {'request' : request})
+            return Response(serializer.data)
+        
+        return Response({"Message": ""})

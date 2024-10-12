@@ -7,7 +7,6 @@ from rest_framework_simplejwt.views import (TokenObtainPairView,TokenRefreshView
 from rest_framework import routers
 
 urlpatterns = [
-
     # These two URL endpoints are for JWT token.
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
@@ -37,5 +36,14 @@ urlpatterns = [
 
     # This is for making friends.
     path('follow/<str:username>/', userconnectionViewer.as_view(), name = "userconnection_View"),
+
+    # This is for see sending friend request
+    path('sending_friend_request/', sending_friend_request.as_view(), name="sending_friend_request"),
+
+    # This is for see sending friend request
+    path('resive_friend_request/', resive_friend_request.as_view(), name="resive_friend_request"),
+
+    # This is the profile
+    path('', profileView.as_view(), name="profileView")
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

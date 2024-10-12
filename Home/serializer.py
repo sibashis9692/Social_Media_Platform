@@ -21,6 +21,7 @@ class userregisterSerializer(serializers.ModelSerializer):
 class userloginSerializer(serializers.ModelSerializer):
     email = serializers.EmailField()
     username = serializers.CharField()
+
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'password']
@@ -229,21 +230,101 @@ class conectionSerilaizer(serializers.ModelSerializer):
         print(current_user.username)
         print(username)
 
+        if(not data.get("make_friend")):
+            raise serializers.ValidationError({"Status" : f"Please Check the box if you want to make friend with {username}"})
+        
         if(current_user.username == username):
 
             raise serializers.ValidationError({"Status" : "Yor can't make friend with your self"})
-        
         user = User.objects.filter(username = username).first()
+
+        exitst_request = panding_requests.objects.filter(to = current_user, From = user).first()
+
+        if(exitst_request):
+            raise serializers.ValidationError({"Mes" : "You Request Alrady Exists"})
+        
         exitst_friendShip = Connection.objects.filter(user = current_user, friends = user).first()
 
         if(exitst_friendShip):
             raise serializers.ValidationError({"Mes" : "You are alrady friends"})
-        
+
         return data
     
     def create(self, validated_data):
         current_user = self.context['current_user']
         username = self.context['post']
+
+        print(current_user)
+        print(username)
+
+        user = User.objects.filter(username = username).first()
+
+        obj = panding_requests.objects.create(to = user, From = current_user)
+
+        return obj
+    
+
+class sending_friend_request_Serializer(serializers.ModelSerializer):
+    retrive = serializers.CharField()
+    to = serializers.SerializerMethodField()
+
+    class Meta:
+        model = panding_requests
+        fields = ['to', 'retrive']
+
+
+    def get_to(self, obj):
+        return obj.to.username
+    
+class resive_friend_request_Serializer(serializers.ModelSerializer):
+    From = serializers.SerializerMethodField()
+    accept = serializers.SerializerMethodField()
+
+    class Meta:
+        model = panding_requests
+        fields = ['From', 'accept']
+
+    def get_From(self, obj):
+        return obj.From.username
+
+    def get_accept(self, obj):
+        request = self.context.get('request')
+        base_url = request.build_absolute_uri('/')
+        return f"{base_url}{reverse('userconnection_View', kwargs={'username': obj.From.username})}"
+
+class accept_resive_friend_Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = Connection
+        fields = "_all_"
+
+    def validate(self, data):
+        current_user = self.context['current_user']
+        username = self.context['post']
+        
+        print(current_user.username)
+        print(username)
+
+        if(not data.get("make_friend")):
+            raise serializers.ValidationError({"Status" : f"Please Check the box if you want to make friend with {username}"})
+        
+        if(current_user.username == username):
+
+            raise serializers.ValidationError({"Status" : "Yor can't make friend with your self"})
+        user = User.objects.filter(username = username).first()
+
+        exitst_friendShip = Connection.objects.filter(user = current_user, friends = user).first()
+
+        if(exitst_friendShip):
+                raise serializers.ValidationError({"Mes" : "You are alrady friends"})
+
+        return data
+    
+    def create(self, validated_data):
+        current_user = self.context['current_user']
+        username = self.context['post']
+
+        print(current_user)
+        print(username)
 
         user = User.objects.filter(username = username).first()
 
@@ -252,3 +333,23 @@ class conectionSerilaizer(serializers.ModelSerializer):
         obj.save()
 
         return obj
+    
+class profileSerializer(serializers.ModelSerializer):
+    sending_friend_request = serializers.SerializerMethodField()
+    resive_friend_request = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'first_name', 'last_name','sending_friend_request', 'resive_friend_request']
+
+    def get_sending_friend_request(self, obj):
+        request = self.context.get('request')
+        base_url = request.build_absolute_uri('/')
+        return f"{base_url}{reverse('sending_friend_request', kwargs={})}"
+    
+
+    def get_resive_friend_request(self, obj):
+        request = self.context.get('request')
+        base_url = request.build_absolute_uri('/')
+        return f"{base_url}{reverse('resive_friend_request', kwargs={})}"
+    

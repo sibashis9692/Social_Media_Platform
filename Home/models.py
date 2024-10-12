@@ -53,3 +53,8 @@ class Likes(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     post = models.ForeignKey(Posts, on_delete=models.CASCADE)
     like = models.BooleanField()
+
+
+class panding_requests(models.Model):
+    to = models.ForeignKey(User, on_delete = models.CASCADE, )
+    From = models.ForeignKey(User, on_delete = models.CASCADE, related_name='Form')
